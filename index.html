@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI FraudShield — Proactive Protection for Every Transaction</title>
+  <meta name="description" content="FraudShield analyzes transaction behavior and adds protection when something doesn't look right. Proactive, behavioral-AI driven transaction security." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ── TICKER STRIP ── -->
+  <div class="ticker-strip" id="ticker-strip" aria-label="System status ticker">
+    <div class="ticker-inner">
+      <span class="ticker-content">
+        AI FRAUDSHIELD &nbsp;·&nbsp; BEHAVIORAL ANALYSIS &nbsp;·&nbsp; TRANSACTION SECURITY &nbsp;·&nbsp; REAL-TIME PROTECTION &nbsp;·&nbsp; STEP-UP VERIFICATION &nbsp;·&nbsp; ANOMALY DETECTION &nbsp;·&nbsp; AI FRAUDSHIELD &nbsp;·&nbsp; BEHAVIORAL ANALYSIS &nbsp;·&nbsp; TRANSACTION SECURITY &nbsp;·&nbsp; REAL-TIME PROTECTION &nbsp;·&nbsp; STEP-UP VERIFICATION &nbsp;·&nbsp; ANOMALY DETECTION &nbsp;·&nbsp;
+      </span>
+    </div>
+  </div>
+
+  <!-- ── NAVIGATION ── -->
+  <nav class="navbar" id="navbar" role="navigation" aria-label="Main navigation">
+    <div class="nav-inner">
+      <a href="#" class="nav-brand" aria-label="AI FraudShield home">AI FRAUDSHIELD</a>
+
+      <ul class="nav-links" id="nav-links" role="list">
+        <li><a href="#how-it-works" class="nav-link">HOW IT WORKS</a></li>
+        <li><a href="#transactions" class="nav-link">TRANSACTIONS</a></li>
+        <li><a href="#security" class="nav-link">SECURITY</a></li>
+        <li><a href="#about" class="nav-link">ABOUT</a></li>
+      </ul>
+
+      <div class="nav-status" aria-label="System status">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span class="status-label">SYSTEM ONLINE</span>
+      </div>
+
+      <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+
+    <!-- ── HERO ── -->
+    <section class="hero" id="how-it-works" aria-label="Hero section">
+      <div class="container">
+        <div class="hero-inner">
+          <p class="hero-label">BEHAVIORAL AI × HUMAN VERIFICATION</p>
+          <h1 class="hero-heading">
+            IS THIS<br />
+            TRANSACTION<br />
+            SAFE?
+          </h1>
+          <p class="hero-body">
+            FraudShield analyzes transaction behavior and adds protection<br class="break-lg" />
+            when something doesn't look right.
+          </p>
+        </div>
+      </div>
+      <div class="hero-rule"></div>
+    </section>
+
+    <!-- ── TRANSACTION PANEL ── -->
+    <section class="section-panel" id="transactions" aria-label="Make a transaction">
+      <div class="container">
+        <div class="panel-header">
+          <span class="panel-number">01</span>
+          <h2 class="panel-title">MAKE A TRANSACTION</h2>
+        </div>
+        <div class="panel-body">
+          <div class="transaction-form-wrap">
+            <form class="transaction-form" id="transaction-form" novalidate>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label" for="recipient">RECIPIENT</label>
+                  <input
+                    type="text"
+                    id="recipient"
+                    name="recipient"
+                    class="form-input"
+                    placeholder="Rahul Sharma"
+                    autocomplete="off"
+                  />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="amount">AMOUNT</label>
+                  <div class="input-prefix-wrap">
+                    <span class="input-prefix">₹</span>
+                    <input
+                      type="text"
+                      id="amount"
+                      name="amount"
+                      class="form-input input-with-prefix"
+                      placeholder="75,000"
+                      autocomplete="off"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="note">NOTE <span class="form-label-optional">— OPTIONAL</span></label>
+                <input
+                  type="text"
+                  id="note"
+                  name="note"
+                  class="form-input"
+                  placeholder="Family transfer"
+                  autocomplete="off"
+                />
+              </div>
+
+              <div class="form-meta-row">
+                <p class="form-context-line">
+                  <span class="mono">Typical transaction range: ₹500 — ₹15,000</span>
+                  <span class="risk-flag" id="risk-flag" aria-live="polite"></span>
+                </p>
+              </div>
+
+              <div class="form-action-row">
+                <button type="submit" class="btn-primary" id="send-btn">
+                  SEND MONEY →
+                </button>
+                <p class="form-disclaimer">Behavioral analysis runs automatically on every transaction.</p>
+              </div>
+
+            </form>
+          </div>
+
+          <div class="panel-divider" aria-hidden="true"></div>
+
+          <!-- Risk indicator sidebar -->
+          <aside class="risk-sidebar" aria-label="Transaction risk context">
+            <p class="sidebar-label">TRANSACTION CONTEXT</p>
+            <div class="risk-row">
+              <span class="risk-key">Your avg. transfer</span>
+              <span class="risk-val mono">₹4,200</span>
+            </div>
+            <div class="risk-row">
+              <span class="risk-key">Typical range</span>
+              <span class="risk-val mono">₹500 — ₹15,000</span>
+            </div>
+            <div class="risk-row">
+              <span class="risk-key">New recipient?</span>
+              <span class="risk-val mono">YES</span>
+            </div>
+            <div class="risk-row">
+              <span class="risk-key">Time of day</span>
+              <span class="risk-val mono" id="sidebar-time">—</span>
+            </div>
+            <div class="risk-divider"></div>
+            <div class="risk-row risk-row--alert">
+              <span class="risk-key">Shield status</span>
+              <span class="risk-val status-active mono">ACTIVE</span>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── RECENT TRANSACTIONS ── -->
+    <section class="section-dark" id="recent-transactions" aria-label="Recent transactions">
+      <div class="container">
+        <div class="section-header">
+          <span class="panel-number">02</span>
+          <h2 class="panel-title panel-title--light">RECENT TRANSACTIONS</h2>
+        </div>
+
+        <div class="tx-table-wrap">
+          <table class="tx-table" id="tx-table" aria-label="Recent transactions list">
+            <thead>
+              <tr>
+                <th scope="col" class="tx-th">MERCHANT / RECIPIENT</th>
+                <th scope="col" class="tx-th tx-th--right">AMOUNT</th>
+                <th scope="col" class="tx-th tx-th--center">DATE &amp; TIME</th>
+                <th scope="col" class="tx-th tx-th--center">CATEGORY</th>
+                <th scope="col" class="tx-th tx-th--center">STATUS</th>
+              </tr>
+            </thead>
+            <tbody id="tx-body">
+              <!-- JS-rendered rows -->
+            </tbody>
+          </table>
+        </div>
+
+        <p class="tx-footer-note mono">127 transactions analyzed this month. 0 blocked.</p>
+      </div>
+    </section>
+
+    <!-- ── SECURITY STATUS ── -->
+    <section class="section-panel section-panel--dark" id="security" aria-label="Security status">
+      <div class="container">
+        <div class="panel-header">
+          <span class="panel-number">03</span>
+          <h2 class="panel-title">SECURITY STATUS</h2>
+        </div>
+
+        <div class="security-grid">
+
+          <div class="security-main-block">
+            <p class="security-system-label mono">FRAUDSHIELD</p>
+            <p class="security-system-status">ACTIVE</p>
+            <p class="security-system-sub">All behavioral monitors running.</p>
+          </div>
+
+          <div class="security-stats-block">
+            <div class="stat-item">
+              <p class="stat-label mono">RISK MONITORING</p>
+              <p class="stat-value status-active mono">ACTIVE</p>
+            </div>
+            <div class="stat-item">
+              <p class="stat-label mono">BEHAVIOR PROFILE</p>
+              <p class="stat-value mono">ESTABLISHED</p>
+            </div>
+            <div class="stat-divider" aria-hidden="true"></div>
+            <div class="stat-item">
+              <p class="stat-label mono">TRANSACTIONS ANALYZED</p>
+              <p class="stat-value mono" id="tx-count">127</p>
+            </div>
+            <div class="stat-divider" aria-hidden="true"></div>
+            <div class="stat-item">
+              <p class="stat-label mono">LAST SCAN</p>
+              <p class="stat-value mono" id="last-scan">—</p>
+            </div>
+          </div>
+
+          <div class="security-checks-block">
+            <p class="sidebar-label">ACTIVE MONITORS</p>
+            <ul class="check-list" role="list">
+              <li class="check-item check-item--ok">
+                <span class="check-icon mono" aria-hidden="true">✓</span>
+                <span class="check-text">Velocity check</span>
+              </li>
+              <li class="check-item check-item--ok">
+                <span class="check-icon mono" aria-hidden="true">✓</span>
+                <span class="check-text">Amount anomaly detection</span>
+              </li>
+              <li class="check-item check-item--ok">
+                <span class="check-icon mono" aria-hidden="true">✓</span>
+                <span class="check-text">New recipient flagging</span>
+              </li>
+              <li class="check-item check-item--ok">
+                <span class="check-icon mono" aria-hidden="true">✓</span>
+                <span class="check-text">Time-of-day analysis</span>
+              </li>
+              <li class="check-item check-item--ok">
+                <span class="check-icon mono" aria-hidden="true">✓</span>
+                <span class="check-text">Device fingerprint</span>
+              </li>
+              <li class="check-item check-item--pending">
+                <span class="check-icon mono" aria-hidden="true">◌</span>
+                <span class="check-text">Face verification <span class="coming-soon">— COMING SOON</span></span>
+              </li>
+              <li class="check-item check-item--pending">
+                <span class="check-icon mono" aria-hidden="true">◌</span>
+                <span class="check-text">AI voice call <span class="coming-soon">— COMING SOON</span></span>
+              </li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ── ABOUT ── -->
+    <section class="section-dark section-about" id="about" aria-label="About this project">
+      <div class="container">
+        <div class="about-grid">
+          <div class="about-label-col">
+            <p class="about-eyebrow mono">ABOUT THIS PROJECT</p>
+          </div>
+          <div class="about-content-col">
+            <h2 class="about-heading">AI FRAUDSHIELD</h2>
+            <p class="about-body">
+              An experimental transaction security layer built for a hackathon. FraudShield monitors
+              behavioral patterns — transaction size, timing, frequency, recipient history — and flags
+              anything that falls outside your normal profile.
+            </p>
+            <p class="about-body about-body--dim mono">
+              This is a student project. Not a product. Not a startup. Just code and curiosity.
+            </p>
+
+            <div class="about-tech-row">
+              <span class="tech-pill">Behavioral AI</span>
+              <span class="tech-pill">Anomaly Detection</span>
+              <span class="tech-pill">Step-Up Verification</span>
+              <span class="tech-pill">Face Recognition</span>
+              <span class="tech-pill">AI Voice Calls</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── FOOTER ── -->
+  <footer class="footer" role="contentinfo">
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <p class="footer-name">AI FRAUDSHIELD</p>
+          <p class="footer-tagline">"Proactive transaction protection."</p>
+        </div>
+        <div class="footer-meta mono">
+          <p>HACKATHON PROJECT · 2026</p>
+          <p class="footer-status">
+            <span class="status-dot status-dot--sm" aria-hidden="true"></span>
+            ALL SYSTEMS OPERATIONAL
+          </p>
+        </div>
+      </div>
+      <div class="footer-rule" aria-hidden="true"></div>
+      <p class="footer-copy mono">Built with intent. Not a real financial product.</p>
+    </div>
+  </footer>
+
+  <!-- ── MODAL: FRAUD ALERT ── -->
+  <div class="modal-overlay" id="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title" hidden>
+    <div class="modal" id="modal">
+      <div class="modal-header">
+        <p class="modal-eyebrow mono">FRAUDSHIELD ALERT</p>
+        <button class="modal-close" id="modal-close" aria-label="Close alert">✕</button>
+      </div>
+      <h3 class="modal-title" id="modal-title">UNUSUAL TRANSACTION DETECTED</h3>
+      <p class="modal-body" id="modal-body">This transaction is significantly above your typical range. FraudShield has flagged it for step-up verification.</p>
+      <div class="modal-details" id="modal-details"></div>
+      <div class="modal-actions">
+        <button class="btn-primary btn-danger" id="modal-block">BLOCK TRANSACTION</button>
+        <button class="btn-ghost" id="modal-proceed">PROCEED ANYWAY →</button>
+      </div>
+      <p class="modal-note mono">In production: face verification + AI voice call would be triggered here.</p>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
