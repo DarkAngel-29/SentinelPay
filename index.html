@@ -205,20 +205,24 @@
 
           <div class="security-main-block">
             <p class="security-system-label mono">FRAUDSHIELD</p>
-            <p class="security-system-status">ACTIVE</p>
-            <p class="security-system-sub">All behavioral monitors running.</p>
+            <p class="security-system-status" id="sec-main-status">ACTIVE</p>
+            <p class="security-system-sub" id="sec-main-sub">All behavioral monitors running.</p>
           </div>
 
           <div class="security-stats-block">
             <div class="stat-item">
               <p class="stat-label mono">RISK MONITORING</p>
-              <p class="stat-value status-active mono">ACTIVE</p>
+              <p class="stat-value mono" id="stat-risk-value" style="color:var(--clr-ok);">ACTIVE</p>
             </div>
             <div class="stat-item">
               <p class="stat-label mono">BEHAVIOR PROFILE</p>
               <p class="stat-value mono">ESTABLISHED</p>
             </div>
             <div class="stat-divider" aria-hidden="true"></div>
+            <div class="stat-item" id="stat-alert-row" style="display:none;">
+              <p class="stat-label mono">CURRENT ALERT</p>
+              <p class="stat-value mono" id="stat-alert-value">—</p>
+            </div>
             <div class="stat-item">
               <p class="stat-label mono">TRANSACTIONS ANALYZED</p>
               <p class="stat-value mono" id="tx-count">127</p>
@@ -321,21 +325,10 @@
     </div>
   </footer>
 
-  <!-- ── MODAL: FRAUD ALERT ── -->
+  <!-- ── MODAL: dynamic shell — content injected by app.js ── -->
   <div class="modal-overlay" id="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title" hidden>
     <div class="modal" id="modal">
-      <div class="modal-header">
-        <p class="modal-eyebrow mono">FRAUDSHIELD ALERT</p>
-        <button class="modal-close" id="modal-close" aria-label="Close alert">✕</button>
-      </div>
-      <h3 class="modal-title" id="modal-title">UNUSUAL TRANSACTION DETECTED</h3>
-      <p class="modal-body" id="modal-body">This transaction is significantly above your typical range. FraudShield has flagged it for step-up verification.</p>
-      <div class="modal-details" id="modal-details"></div>
-      <div class="modal-actions">
-        <button class="btn-primary btn-danger" id="modal-block">BLOCK TRANSACTION</button>
-        <button class="btn-ghost" id="modal-proceed">PROCEED ANYWAY →</button>
-      </div>
-      <p class="modal-note mono">In production: face verification + AI voice call would be triggered here.</p>
+      <!-- JS populates this entirely -->
     </div>
   </div>
 
