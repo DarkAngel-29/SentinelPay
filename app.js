@@ -139,6 +139,25 @@ function initStats() {
 }
 
 /* ─────────────────────────────────────────────
+   MOCK RISK CALCULATION
+   ─────────────────────────────────────────────
+   TEMPORARY placeholder — replace with real
+   ML / backend risk score when the model is ready.
+   Currently: flags any amount above the typical max
+   and always treats the form recipient as new.
+   ───────────────────────────────────────────── */
+function calculateMockRisk(amount) {
+  const isAboveRange = amount > MOCK_PROFILE.typicalRangeMax;
+  const isNewRecipient = true; // mock: real lookup replaces this
+  return {
+    isHighRisk:     isAboveRange,
+    isNewRecipient: isNewRecipient,
+    shouldFlag:     isAboveRange || isNewRecipient,
+    level:          isAboveRange ? 'HIGH' : 'MEDIUM',
+  };
+}
+
+/* ─────────────────────────────────────────────
    RISK CHECKER — live as user types amount
    ───────────────────────────────────────────── */
 function initRiskChecker() {
@@ -153,7 +172,8 @@ function initRiskChecker() {
       riskFlag.className = 'risk-flag';
       return;
     }
-    if (val > MOCK_PROFILE.typicalRangeMax) {
+    const risk = calculateMockRisk(val);
+    if (risk.isHighRisk) {
       riskFlag.textContent = '⚑ ABOVE TYPICAL RANGE';
       riskFlag.className = 'risk-flag flag--high';
     } else {
@@ -173,10 +193,9 @@ function openModal(recipient, amount, note) {
 
   if (!overlay) return;
 
-  const isHighRisk = amount > MOCK_PROFILE.typicalRangeMax;
-  const isNewRecip = true; // mock: always treat form recipient as new
+  const risk = calculateMockRisk(amount);
 
-  body.textContent = isHighRisk
+  body.textContent = risk.isHighRisk
     ? `This transfer of ${formatAmount(amount)} is ${Math.round(amount / MOCK_PROFILE.avgTransfer)}× your average transaction. FraudShield has flagged it for review.`
     : `Transfer to a new recipient detected. FraudShield is performing a quick behavioral check.`;
 
@@ -185,8 +204,8 @@ function openModal(recipient, amount, note) {
     <div class="modal-detail-row"><span>AMOUNT</span><span>${formatAmount(amount)}</span></div>
     ${note ? `<div class="modal-detail-row"><span>NOTE</span><span>${note}</span></div>` : ''}
     <div class="modal-detail-row"><span>YOUR AVG. TRANSACTION</span><span>${formatAmount(MOCK_PROFILE.avgTransfer)}</span></div>
-    <div class="modal-detail-row"><span>NEW RECIPIENT?</span><span>${isNewRecip ? 'YES' : 'NO'}</span></div>
-    <div class="modal-detail-row"><span>RISK LEVEL</span><span style="color:${isHighRisk ? 'var(--clr-danger)' : 'var(--clr-accent)'};">${isHighRisk ? 'HIGH' : 'MEDIUM'}</span></div>
+    <div class="modal-detail-row"><span>NEW RECIPIENT?</span><span>${risk.isNewRecipient ? 'YES' : 'NO'}</span></div>
+    <div class="modal-detail-row"><span>RISK LEVEL</span><span style="color:${risk.isHighRisk ? 'var(--clr-danger)' : 'var(--clr-accent)'};"> ${risk.level}</span></div>
   `;
 
   overlay.removeAttribute('hidden');
@@ -250,9 +269,9 @@ function handleProceed() {
     initStats();
     showToast('Transaction processed.', 'ok');
 
-    // Reset form
+    // Reset form — restore default amount so the form starts in a normal state
     if (recipientEl) recipientEl.value = '';
-    if (amountEl)    amountEl.value = '';
+    if (amountEl)    amountEl.value = '5,000';
     if (noteEl)      noteEl.value = '';
     const riskFlag = document.getElementById('risk-flag');
     if (riskFlag) { riskFlag.textContent = ''; riskFlag.className = 'risk-flag'; }
@@ -272,10 +291,9 @@ function initForm() {
     if (!recipient) { showToast('Please enter a recipient name.', 'warn'); return; }
     if (!amount)    { showToast('Please enter a valid amount.', 'warn'); return; }
 
-    const isHighRisk = amount > MOCK_PROFILE.typicalRangeMax;
-    const isNewRecip = true; // mock
+    const risk = calculateMockRisk(amount);
 
-    if (isHighRisk || isNewRecip) {
+    if (risk.shouldFlag) {
       openModal(recipient, amount, document.getElementById('note').value.trim());
     } else {
       handleProceed();
@@ -377,6 +395,16 @@ function initNavScroll() {
 }
 
 /* ─────────────────────────────────────────────
+   DEFAULT FORM STATE
+   ───────────────────────────────────────────── */
+function setDefaultFormState() {
+  const amountEl = document.getElementById('amount');
+  // Pre-fill with a normal everyday amount so the form doesn't
+  // open in a suspicious state. Recipient intentionally left blank.
+  if (amountEl && !amountEl.value) amountEl.value = '5,000';
+}
+
+/* ─────────────────────────────────────────────
    BOOT
    ───────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
@@ -388,4 +416,5 @@ document.addEventListener('DOMContentLoaded', () => {
   initRiskChecker();
   initForm();
   initModal();
+  setDefaultFormState();
 });

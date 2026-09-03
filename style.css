@@ -53,8 +53,8 @@ img { display: block; max-width: 100%; }
 }
 .mono { font-family: var(--font-mono); }
 .status-active { color: var(--clr-ok); }
-.coming-soon { color: var(--clr-text-dim); font-size: 0.7em; letter-spacing: 0.05em; }
 .break-lg { display: block; }
+
 
 /* ── TICKER STRIP ── */
 .ticker-strip {
