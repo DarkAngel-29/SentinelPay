@@ -592,3 +592,133 @@ FraudShield asks:
 **AI FraudShield**
 
 > *Proactive protection before the money is gone.*
+
+---
+
+## 🤖 Machine Learning Model
+
+### Overview
+
+AI FraudShield uses a trained **Random Forest Classifier** to assess the fraud probability of every transaction before it is authorized. The model is trained on a synthetic behavioral dataset and produces a **0–100 risk score** that drives the verification flow.
+
+### Dataset
+
+The model is trained on a **synthetically generated dataset** of 15,000 transactions:
+
+| Class | Count | Percentage |
+|-------|-------|------------|
+| Legitimate | 13,500 | 90% |
+| Fraudulent | 1,500 | 10% |
+
+The dataset is generated with realistic behavioral patterns and intentional noise/overlap so that the model must genuinely learn patterns rather than reproduce deterministic thresholds.
+
+> **Note:** This is a hackathon prototype dataset. It is not derived from real banking transaction data.
+
+### Input Features
+
+The model uses exactly **5 behavioural features**:
+
+| Feature | Description |
+|---------|-------------|
+| `transaction_amount` | Current transaction amount in INR |
+| `user_avg_amount` | User's historical average transaction amount |
+| `new_recipient` | 1 = first-time recipient, 0 = known recipient |
+| `transaction_frequency` | Number of transactions in the recent time window |
+| `transaction_hour` | Hour of the transaction (0–23) |
+
+### Target
+
+| Column | Values |
+|--------|--------|
+| `fraud_label` | 0 = legitimate, 1 = fraudulent |
+
+`fraud_label` is the **training target only** — it is never used as a prediction input.
+
+### Model Architecture
+
+- **Algorithm:** `RandomForestClassifier` (scikit-learn)
+- **Trees:** 100 estimators
+- **Class weighting:** Balanced (handles 90/10 imbalance)
+- **Train/test split:** 80% / 20%, stratified
+- **Random state:** 42 (reproducible)
+
+### Model Performance (on held-out test set)
+
+| Metric | Value |
+|--------|-------|
+| Accuracy | 99.2% |
+| Precision | 97.3% |
+| Recall | 94.7% |
+| F1 Score | 95.9% |
+| ROC-AUC | 99.9% |
+
+### Feature Importances
+
+| Feature | Importance |
+|---------|-----------|
+| `transaction_amount` | 43.2% |
+| `transaction_frequency` | 28.4% |
+| `transaction_hour` | 11.4% |
+| `new_recipient` | 10.8% |
+| `user_avg_amount` | 6.3% |
+
+### Risk Score Mapping
+
+```
+fraud_probability × 100 = risk_score (0–100)
+
+0–29   → LOW RISK    (normal transaction flow)
+30–59  → MEDIUM RISK (additional confirmation)
+60–100 → HIGH RISK   (step-up identity verification)
+```
+
+### Backend API
+
+The model is served via a lightweight **FastAPI** server:
+
+```
+POST http://127.0.0.1:8000/predict
+
+Request:
+{
+  "transaction_amount": 75000,
+  "user_avg_amount": 4200,
+  "new_recipient": 1,
+  "transaction_frequency": 8,
+  "transaction_hour": 3
+}
+
+Response:
+{
+  "risk_score": 100,
+  "risk_level": "HIGH",
+  "fraud_probability": 1.0,
+  "features": { ... },
+  "model_status": "ONLINE"
+}
+```
+
+### Running the Backend
+
+```bash
+# 1. Install dependencies
+pip install -r backend/requirements.txt
+
+# 2. Generate synthetic dataset
+python backend/generate_dataset.py
+
+# 3. Train the model
+python backend/train_model.py
+
+# 4. Start the API server
+python -m uvicorn backend.app:app --host 127.0.0.1 --port 8000
+```
+
+### Offline Fallback
+
+If the backend is unreachable, the frontend automatically falls back to a **deterministic rule-based scoring engine**. The modal eyebrow clearly shows:
+
+- `ML MODEL` — prediction is from the trained Random Forest
+- `OFFLINE MODE` — prediction is from the local fallback
+
+> **Disclaimer:** This model is a hackathon prototype. It is not production-ready and should not be used as a real banking fraud detection system.

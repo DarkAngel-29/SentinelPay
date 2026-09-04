@@ -90,16 +90,134 @@ function clamp(v, min, max) {
 
 
 /* ──────────────────────────────────────────────────────────────
-   BEHAVIORAL RISK ENGINE
-   ──────────────────────────────────────────────────────────────
-   calculateRisk(transaction, profile) → { score, level, factors }
-
-   This is the single source of truth for risk decisions.
-   Replace the body of this function with a real ML/backend call
-   when the model is ready — the UI wiring does not need to change.
+   ML BACKEND CONFIG
    ────────────────────────────────────────────────────────────── */
 
-function calculateRisk(transaction, profile) {
+const ML_BACKEND_URL = 'http://127.0.0.1:8000';
+
+
+/* ──────────────────────────────────────────────────────────────
+   ML RISK PREDICTION (async)
+   ──────────────────────────────────────────────────────────────
+   Calls the trained Random Forest model via FastAPI.
+   Falls back to calculateRiskLocal() if the backend is down.
+   Returns the same { score, level, factors, source } shape
+   the UI already expects.
+   ────────────────────────────────────────────────────────────── */
+
+async function predictRisk(transaction, profile) {
+  const { amount, recipient } = transaction;
+  const known = isKnownRecipient(recipient);
+  const h = currentHour();
+  const recentCount = profile.recentTxTimestamps.filter(
+    ts => (Date.now() - ts) < 1000 * 60 * 60 * 1
+  ).length;
+
+  const payload = {
+    transaction_amount:    amount,
+    user_avg_amount:       profile.avgTransfer,
+    new_recipient:         known ? 0 : 1,
+    transaction_frequency: recentCount + 1,  // include current tx
+    transaction_hour:      h,
+  };
+
+  try {
+    const resp = await fetch(`${ML_BACKEND_URL}/predict`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+
+    // Build explainable factors from the feature values
+    const factors = buildFactorsFromFeatures(data.features, data.risk_score, profile, recipient);
+
+    return {
+      score:   data.risk_score,
+      level:   data.risk_level,
+      factors: factors,
+      source:  'ML_MODEL',
+    };
+
+  } catch (err) {
+    console.warn('[FraudShield] ML backend unavailable, using local fallback:', err.message);
+    const local = calculateRiskLocal(transaction, profile);
+    local.source = 'OFFLINE';
+    return local;
+  }
+}
+
+/* Build human-readable factor cards from raw feature values */
+function buildFactorsFromFeatures(features, score, profile, recipient) {
+  const factors = [];
+  const amount = features.transaction_amount;
+  const avg    = features.user_avg_amount;
+  const ratio  = amount / avg;
+
+  // AMOUNT
+  if (amount > profile.typicalRangeMax) {
+    let label, verdict;
+    if (ratio >= 10)     { label = 'Amount severely above normal';       verdict = 'SEVERE DEVIATION'; }
+    else if (ratio >= 3) { label = 'Amount significantly above normal';  verdict = 'SIGNIFICANT DEVIATION'; }
+    else                 { label = 'Amount above typical range';         verdict = 'ABOVE RANGE'; }
+    factors.push({
+      signal: 'AMOUNT', points: Math.round(score * 0.43),
+      label, detail: `${formatAmount(amount)} is ${ratio.toFixed(1)}\u00d7 your average (${formatAmount(avg)}). Typical: ${formatAmount(profile.typicalRangeMin)} \u2013 ${formatAmount(profile.typicalRangeMax)}.`,
+      verdict,
+    });
+  }
+
+  // RECIPIENT
+  if (features.new_recipient === 1) {
+    factors.push({
+      signal: 'RECIPIENT', points: Math.round(score * 0.11),
+      label: 'New recipient',
+      detail: `"${recipient}" has no previous transfer history on this account.`,
+      verdict: 'NEW RECIPIENT',
+    });
+  }
+
+  // FREQUENCY
+  if (features.transaction_frequency >= 8) {
+    factors.push({
+      signal: 'VELOCITY', points: Math.round(score * 0.28),
+      label: 'High transaction frequency',
+      detail: `${features.transaction_frequency} transactions in the recent window.`,
+      verdict: 'HIGH VELOCITY',
+    });
+  } else if (features.transaction_frequency >= 4) {
+    factors.push({
+      signal: 'VELOCITY', points: Math.round(score * 0.15),
+      label: 'Elevated transaction frequency',
+      detail: `${features.transaction_frequency} transactions in the recent window.`,
+      verdict: 'ELEVATED',
+    });
+  }
+
+  // TIME
+  const txHour = features.transaction_hour;
+  if (txHour < profile.typicalHoursStart || txHour >= profile.typicalHoursEnd) {
+    factors.push({
+      signal: 'TIME', points: Math.round(score * 0.11),
+      label: 'Outside usual transaction hours',
+      detail: `Transaction at ${String(txHour).padStart(2,'0')}:00 \u2014 your typical activity is ${profile.typicalHoursStart}:00 \u2013 ${profile.typicalHoursEnd}:00.`,
+      verdict: 'UNUSUAL TIME',
+    });
+  }
+
+  return factors;
+}
+
+
+/* ──────────────────────────────────────────────────────────────
+   LOCAL RISK ENGINE (offline fallback)
+   ──────────────────────────────────────────────────────────────
+   Deterministic rule-based scoring. Used when the ML backend
+   is unreachable. The UI labels this as "OFFLINE MODE".
+   ────────────────────────────────────────────────────────────── */
+
+function calculateRiskLocal(transaction, profile) {
   const { amount, recipient } = transaction;
   const factors = [];
   let score = 0;
@@ -378,6 +496,8 @@ function openOverlay() {
 
 function closeOverlay() {
   clearCountdown();
+  // Release face verification camera on any close path (backdrop, Esc, ✕)
+  if (window.FaceVerify) window.FaceVerify.stop();
   const overlay = document.getElementById('modal-overlay');
   if (overlay) { overlay.setAttribute('hidden', ''); document.body.style.overflow = ''; }
   ACTIVE_TX = null;
@@ -404,7 +524,7 @@ function clearCountdown() {
 function showLowRisk(tx, riskResult) {
   setModalContent(`
     <div class="modal-header">
-      <p class="modal-eyebrow mono">TRANSACTION CHECK</p>
+      <p class="modal-eyebrow mono">${riskResult.source === 'OFFLINE' ? 'OFFLINE MODE' : 'ML MODEL'}</p>
       <button class="modal-close" id="modal-close" aria-label="Close">✕</button>
     </div>
     <h3 class="modal-title" style="color:var(--clr-ok);">LOW RISK</h3>
@@ -441,7 +561,7 @@ function showMediumRisk(tx, riskResult) {
 
   setModalContent(`
     <div class="modal-header">
-      <p class="modal-eyebrow mono">FRAUDSHIELD ALERT</p>
+      <p class="modal-eyebrow mono">${riskResult.source === 'OFFLINE' ? 'OFFLINE MODE' : 'ML MODEL'}</p>
       <button class="modal-close" id="modal-close" aria-label="Close">✕</button>
     </div>
     <h3 class="modal-title" style="color:var(--clr-accent);">CONFIRMATION REQUIRED</h3>
@@ -491,7 +611,7 @@ function showHighRisk(tx, riskResult) {
 
   setModalContent(`
     <div class="modal-header">
-      <p class="modal-eyebrow mono">FRAUDSHIELD ALERT</p>
+      <p class="modal-eyebrow mono">${riskResult.source === 'OFFLINE' ? 'OFFLINE MODE' : 'ML MODEL'}</p>
       <button class="modal-close" id="modal-close" aria-label="Close">✕</button>
     </div>
     <h3 class="modal-title">UNUSUAL TRANSACTION DETECTED</h3>
@@ -508,6 +628,8 @@ function showHighRisk(tx, riskResult) {
       <div class="modal-detail-row"><span>RECIPIENT</span><span>${tx.recipient}</span></div>
       <div class="modal-detail-row"><span>AMOUNT</span><span>${formatAmount(tx.amount)}</span></div>
       <div class="modal-detail-row"><span>YOUR AVG.</span><span>${formatAmount(MOCK_PROFILE.avgTransfer)}</span></div>
+      <div class="modal-detail-row"><span>FRAUD PROBABILITY</span><span style="color:var(--clr-danger);">${riskResult.source === 'OFFLINE' ? 'N/A (offline)' : (riskResult.score / 100).toFixed(2)}</span></div>
+      <div class="modal-detail-row"><span>PREDICTION SOURCE</span><span style="color:${riskResult.source === 'OFFLINE' ? 'var(--clr-accent)' : 'var(--clr-ok)'}">${riskResult.source === 'OFFLINE' ? 'OFFLINE MODE' : 'ML MODEL (Random Forest)'}</span></div>
     </div>
 
     <div class="modal-factors-block">
@@ -580,11 +702,13 @@ function showVerification(tx, riskResult) {
   `);
 
   document.getElementById('btn-cancel-verify').addEventListener('click', () => {
+    // Stop face verification camera before closing
+    if (window.FaceVerify) window.FaceVerify.stop();
     closeOverlay();
     setSecurityState('normal');
   });
 
-  // Start countdown
+  // Start countdown — runs independently of face verification
   let secondsLeft = 20;
   const numEl = document.getElementById('countdown-num');
   const statusEl = document.getElementById('verify-status-text');
@@ -602,9 +726,53 @@ function showVerification(tx, riskResult) {
 
     if (secondsLeft <= 0) {
       clearCountdown();
+      // Release camera before transitioning to voice-call screen
+      if (window.FaceVerify) window.FaceVerify.stop();
       showCallFallback(tx, riskResult);
     }
   }, 1000);
+
+  // Start face verification alongside the countdown.
+  // FaceVerify takes over #face-verify-area and #verify-status-text.
+  // The countdown continues independently — FaceVerify does NOT own it.
+  if (window.FaceVerify) {
+    window.FaceVerify.start({
+      tx,
+      riskResult,
+      onSuccess: () => {
+        // Face matched — stop camera, kill countdown, show success.
+        window.FaceVerify.stop();
+        clearCountdown();
+        showFaceVerified(tx, riskResult);
+      },
+    });
+  }
+}
+
+/* ── FACE VERIFICATION SUCCESS ── */
+function showFaceVerified(tx, riskResult) {
+  setModalContent(`
+    <div class="modal-header">
+      <p class="modal-eyebrow mono">FACE VERIFICATION</p>
+      <button class="modal-close" id="modal-close" aria-label="Close">✕</button>
+    </div>
+    <h3 class="modal-title" style="color:var(--clr-ok);">TRANSACTION AUTHORIZED</h3>
+    <div class="modal-score-row" style="justify-content:center;padding:28px 0;">
+      <div style="text-align:center;">
+        <p style="font-family:var(--font-display);font-weight:900;font-size:3rem;color:var(--clr-ok);line-height:1;">${formatAmount(tx.amount)}</p>
+        <p class="mono" style="font-size:0.65rem;color:var(--clr-text-muted);letter-spacing:0.14em;margin-top:8px;">TRANSACTION TO ${tx.recipient.toUpperCase()}</p>
+        <p class="mono" style="font-size:0.62rem;color:var(--clr-ok);letter-spacing:0.1em;margin-top:12px;">IDENTITY CONFIRMED BY FACE VERIFICATION</p>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-primary" id="btn-done" style="background:var(--clr-ok);border-color:var(--clr-ok);">DONE</button>
+    </div>
+  `);
+  addTransaction(tx.recipient, tx.amount, 'verified');
+  showToast('Identity verified. Transaction processed.', 'ok');
+  setSecurityState('verified');
+  resetForm();
+  document.getElementById('btn-done').addEventListener('click', () => { closeOverlay(); setSecurityState('normal'); });
 }
 
 /* ── AI VOICE CALL FALLBACK ── */
@@ -753,7 +921,7 @@ function initForm() {
   const form = document.getElementById('transaction-form');
   if (!form) return;
 
-  form.addEventListener('submit', e => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const recipient = (document.getElementById('recipient').value || '').trim();
     const amount    = parseAmount(document.getElementById('amount').value);
@@ -763,10 +931,20 @@ function initForm() {
     if (!amount)    { showToast('Please enter a valid amount.', 'warn'); return; }
 
     ACTIVE_TX = { recipient, amount, note };
-    const riskResult = calculateRisk(ACTIVE_TX, MOCK_PROFILE);
 
+    // Show a brief "analyzing" state while we await the ML backend
     openOverlay();
+    setModalContent(`
+      <div class="modal-header">
+        <p class="modal-eyebrow mono">ANALYZING TRANSACTION</p>
+      </div>
+      <h3 class="modal-title">BEHAVIORAL RISK ANALYSIS</h3>
+      <p class="modal-body" style="color:var(--clr-text-dim);">Running transaction through the risk model...</p>
+    `);
 
+    const riskResult = await predictRisk(ACTIVE_TX, MOCK_PROFILE);
+
+    // Route to appropriate modal state
     if (riskResult.level === 'LOW') {
       showLowRisk(ACTIVE_TX, riskResult);
       setSecurityState('normal');
