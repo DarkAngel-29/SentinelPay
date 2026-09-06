@@ -517,7 +517,7 @@ Face Verification
    ↓
 Verification not completed
    ↓
-AI Voice Verification(Yet to be added)
+AI Voice Verification(Yet to be added)[NO THIS IS DROPPED]
    ↓
 User: "No, I didn't authorize this."
    ↓
